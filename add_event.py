@@ -1,45 +1,15 @@
-import sys
 from functools import reduce
 from googleapiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
 import json
 
-import argparse
-parser = argparse.ArgumentParser()
 
 SCOPES = 'https://www.googleapis.com/auth/calendar'
-
-
-test_event = {
-  'summary': 'Appointment',
-  'location': 'Somewhere',
-  'start': {
-    'dateTime': '2019-01-03T10:00:00',
-    'timeZone': 'America/Los_Angeles'
-  },
-  'end': {
-    'dateTime': '2019-01-03T10:25:00',
-    'timeZone': 'America/Los_Angeles'
-  },
-  'recurrence': [
-    'RRULE:FREQ=WEEKLY;UNTIL=20190127',
-  ]
-}
-
-
-
-
-
-DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 TIMEZONE = "Canada/Eastern"
 
-def format_time(str):
 
-    return 0
-
-
-def add_event_manually():
+def add_event():
 
     store = file.Storage('token.json')
     creds = store.get()
@@ -48,43 +18,40 @@ def add_event_manually():
         creds = tools.run_flow(flow, store)
     service = build('calendar', 'v3', http=creds.authorize(Http()))
 
-    event_name = input("Enter the name of the event: ")
+    course_name = input("Enter the course code (e.g., AAAA 100): ")
+    activity_type = input("Type of events (e.g., Lecture, Tutorial, Lab): ")
     day_in_the_week = input("Day: ")
-    start_time = input("From what time (HH:MM:SS) does the event start: ")
-    end_time = input("At what time (HH:MM:SS) does the event end: ")
-    start_date = input("From what date (YYYY-MM-DD) does the event start: ")
-    end_date = input("On what date (YYYY-MM-DD) does the event end: ")
+    location = input("Location: ")
+    start_time = input("From what time (HH:MM:SS) does the " + activity_type + " start: ")
+    end_time = input("At what time (HH:MM:SS) does the " + activity_type + " end: ")
+    start_date = input("From what date (YYYY-MM-DD) does the " + activity_type + " start: ")
+    end_date = input("On what date (YYYY-MM-DD) does the " + activity_type + " end: ")
     recurrence = True
 
-    event_info = {}
-    event_info["summary"] = event_name
-    event_info["start"] = {"dateTime": start_date + "T" + start_time,
+    activity_data = {}
+    activity_data["summary"] = course_name + ' ' + activity_type
+    activity_data["location"] = location
+    activity_data["start"] = {"dateTime": start_date + "T" + start_time,
                            "timeZone": TIMEZONE}
-    event_info["end"] = {"dateTime": start_date + "T" + end_time,
+    activity_data["end"] = {"dateTime": start_date + "T" + end_time,
                          "timeZone": TIMEZONE}
-    event_info["recurrence"] = ["RRULE:FREQ=WEEKLY;UNTIL=" +
+    activity_data["recurrence"] = ["RRULE:FREQ=WEEKLY;UNTIL=" +
                                  reduce(lambda a,b: a+b, end_date.split("-"), "")]
 
-    print(event_info)
-    service.events().insert(calendarId='primary', body=event_info).execute()
+    service.events().insert(calendarId='primary', body=activity_data).execute()
+    print('Creation of event ' + course_name + ' ' + activity_type + " successful!")
 
 
+    with open("courses_info.json", "r") as json_file:
+        json_data = json.load(json_file)
+        activities = json_data.get(course_name)["activities"]
+        attributes = {'location', 'start', 'end', 'recurrence'}
+        new_activities_data = {activity_type: {key: activity_data[key] for key in attributes}}
+        json_data.get(course_name)["activities"].update(new_activities_data)
 
-
-
-def out_console():
-
-    header = ""
-    for d in DAYS:
-        header += ("|---" + d + "---|")
-
-    print(header)
-
-
-    with open("t.json", "r") as data:
-        print(json.load(data))
+    with open("courses_info.json", "w") as json_file:
+        json.dump(json_data, json_file)
 
 
 if __name__ == '__main__':
-    add_event_manually()
-    # gcalendar()
+    add_event()

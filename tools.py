@@ -10,7 +10,7 @@ def get_weekday_index(time):
 
 def index_to_weekday(index):
 
-    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     return weekdays[index]
 
 
